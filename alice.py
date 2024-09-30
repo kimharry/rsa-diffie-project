@@ -62,6 +62,7 @@ def run(addr, port):
 
 def command_line_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument("-o", "--option", metavar="<option (1/2/3/4)>", help="Which protocol to run (1/2/3/4)", type=int, required=True)
     parser.add_argument("-a", "--addr", metavar="<bob's address>", help="Bob's address", type=str, required=True)
     parser.add_argument("-p", "--port", metavar="<bob's port>", help="Bob's port", type=int, required=True)
     parser.add_argument("-l", "--log", metavar="<log level (DEBUG/INFO/WARNING/ERROR/CRITICAL)>", help="Log level (DEBUG/INFO/WARNING/ERROR/CRITICAL)", type=str, default="INFO")
