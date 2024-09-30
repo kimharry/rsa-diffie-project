@@ -1,5 +1,5 @@
 import random
-from utility import *
+from utilities.utility import *
 
 def dh_keygen():
     p = 0

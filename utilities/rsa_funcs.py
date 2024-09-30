@@ -1,5 +1,5 @@
 import random
-from utility import *
+from utilities.utility import *
 
 def rsa_keygen():
     p = 0
@@ -16,7 +16,7 @@ def rsa_keygen():
     d = 0
     while (d * e) % phi != 1:
         d += 1
-    return (n, e, d)
+    return (n, p, q, e, d)
 
 def rsa_encrypt(n, e, m):
     c = []
@@ -39,10 +39,10 @@ def verify_rsa_keypair(p, q, e, d):
     return False
 
 if __name__ == '__main__':
-    n, e, d = rsa_keygen()
-    print(n, e, d)
+    _, p, q, e, d = rsa_keygen()
+    print(p, q, e, d)
     m = "Hello world!"
-    c = rsa_encrypt(n, e, m)
+    c = rsa_encrypt(p*q, e, m)
     print(c)
-    m = rsa_decrypt(n, d, c)
+    m = rsa_decrypt(p*q, d, c)
     print(m)

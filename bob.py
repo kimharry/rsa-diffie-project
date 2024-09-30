@@ -2,9 +2,54 @@ import socket
 import threading
 import argparse
 import logging
+import json
+import base64
+from utilities.rsa_funcs import *
+from utilities.DH_funcs import * 
 
 def handler(sock):
     sock.close()
+
+def RSAKey_protocol(conn):
+    logging.info("[*] Bob RSAKey protocol starts")
+    
+    a_bytes = conn.recv(1024)
+    logging.debug("a_bytes: {}".format(a_bytes))
+
+    a_js = a_bytes.decode("ascii")
+    logging.debug("a_js: {}".format(a_js))
+
+    a_msg = json.loads(a_js)
+    logging.debug("a_msg: {}".format(a_msg))
+
+    logging.info("[*] Received: {}".format(a_js))
+    logging.info(" - opcode: {}".format(a_msg["opcode"]))
+    logging.info(" - type: {}".format(a_msg["type"]))
+
+    _, p, q, e, d = rsa_keygen()
+
+    b_msg = {}
+    b_msg["opcode"] = 0
+    b_msg["type"] = "RSAKey"
+    b_msg["public"] = base64.b64encode(str(e).encode("ascii")).decode("ascii")
+    b_msg["private"] = base64.b64encode(str(d).encode("ascii")).decode("ascii")
+    b_msg["parameters"] = {}
+    b_msg["parameters"]["p"] = p
+    b_msg["parameters"]["q"] = q
+    logging.debug("b_msg: {}".format(b_msg))
+
+    b_js = json.dumps(b_msg)
+    logging.debug("b_js: {}".format(b_js))
+
+    b_bytes = b_js.encode("ascii")
+    logging.debug("b_bytes: {}".format(b_bytes))
+
+    conn.send(b_bytes)
+    logging.info("[*] Sent: {}".format(b_js))
+
+    logging.info("[*] Bob RSAKey protocol ends")
+
+    conn.close()
 
 def run(addr, port):
     bob = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -18,8 +63,9 @@ def run(addr, port):
 
         logging.info("[*] Bob accepts the connection from {}:{}".format(info[0], info[1]))
 
-        conn_handle = threading.Thread(target=handler, args=(conn,))
+        conn_handle = threading.Thread(target=RSAKey_protocol, args=(conn,))
         conn_handle.start()
+
 
 def command_line_args():
     parser = argparse.ArgumentParser()

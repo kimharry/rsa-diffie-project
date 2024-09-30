@@ -1,11 +1,62 @@
 import socket
 import argparse
 import logging
+import json
+import base64
+from utilities.rsa_funcs import *
+from utilities.DH_funcs import * 
+
+def RSAKey_protocol(conn):
+    logging.info("[*] Alice RSAKey protocol starts")
+
+    a_msg = {}
+    a_msg["opcode"] = 0
+    a_msg["type"] = "RSAKey"
+    logging.debug("a_msg: {}".format(a_msg))
+
+    a_js = json.dumps(a_msg)
+    logging.debug("a_js: {}".format(a_js))
+
+    a_bytes = a_js.encode("ascii")
+    logging.debug("a_bytes: {}".format(a_bytes))
+
+    conn.send(a_bytes)
+    logging.info("[*] Sent: {}".format(a_js))
+
+    b_bytes = conn.recv(1024)
+    logging.debug("b_bytes: {}".format(b_bytes))
+
+    b_js = b_bytes.decode("ascii")
+    logging.debug("b_js: {}".format(b_js))
+
+    b_msg = json.loads(b_js)
+    logging.debug("b_msg: {}".format(b_msg))
+
+    public = int(base64.b64decode(b_msg["public"].encode("ascii") + b"==").decode("ascii"))
+    private = int(base64.b64decode(b_msg["private"].encode("ascii") + b"==").decode("ascii"))
+
+    logging.info("[*] Received: {}".format(b_js))
+    logging.info(" - public key: {}".format(public))
+    logging.info(" - private key: {}".format(private))
+    logging.info(" - p: {}".format(b_msg["parameters"]["p"]))
+    logging.info(" - q: {}".format(b_msg["parameters"]["q"]))
+
+    if verify_rsa_keypair(b_msg["parameters"]["p"], b_msg["parameters"]["q"], public, private):
+        logging.info(" - RSA key pair is verified")
+    else:
+        logging.error(" - RSA key pair is not verified")
+        return
+
+    logging.info("[*] Alice RSAKey protocol ends")
+
+    conn.close()
 
 def run(addr, port):
     conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     conn.connect((addr, port))
     logging.info("Alice is connected to {}:{}".format(addr, port))
+
+    RSAKey_protocol(conn)
 
     conn.close()
 
