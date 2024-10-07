@@ -4,8 +4,9 @@ import argparse
 import logging
 import json
 import base64
-from utilities.rsa_funcs import *
+from utilities.RSA_funcs import *
 from utilities.DH_funcs import * 
+from utilities.AES_funcs import *
 
 def handler(sock):
     sock.close()
@@ -29,11 +30,9 @@ def general_protocol(conn):
     if a_msg["type"] == "RSAKey":
         RSAKey_protocol(conn)
     elif a_msg["type"] == "RSA":
-        # RSA_protocol(conn)
-        pass
+        RSA_protocol(conn)
     elif a_msg["type"] == "DH":
-        # DH_protocol(conn)
-        pass
+        DH_protocol(conn)
     else:
         logging.error(" - Unknown protocol type")
         return
@@ -66,6 +65,92 @@ def RSAKey_protocol(conn):
 
     conn.close()
 
+def RSA_protocol(conn):
+    logging.info("[*] Bob RSA protocol starts")
+
+    n, _, _, e, d = rsa_keygen()
+
+    b_msg = {}
+    b_msg["opcode"] = 1
+    b_msg["type"] = "RSA"
+    b_msg["public"] = base64.b64encode(str(e).encode("ascii")).decode("ascii")
+    b_msg["parameters"] = {}
+    b_msg["parameters"]["n"] = n
+    logging.debug("b_msg: {}".format(b_msg))
+
+    b_js = json.dumps(b_msg)
+    logging.debug("b_js: {}".format(b_js))
+
+    b_bytes = b_js.encode("ascii")
+    logging.debug("b_bytes: {}".format(b_bytes))
+
+    conn.send(b_bytes)
+    logging.info("[*] Sent: {}".format(b_js))
+
+    a_bytes = conn.recv(1024)
+    logging.debug("a_bytes: {}".format(a_bytes))
+
+    a_js = a_bytes.decode("ascii")
+    logging.debug("a_js: {}".format(a_js))
+
+    a_msg = json.loads(a_js)
+    logging.debug("a_msg: {}".format(a_msg))
+
+    enc_symm_key = bytes(base64.b64decode(a_msg["encryption"].encode("ascii") + b"==").decode("ascii"), "ascii")
+
+    logging.info("[*] Received: {}".format(a_js))
+    logging.info(" - opcode: {}".format(a_msg["opcode"]))
+    logging.info(" - type: {}".format(a_msg["type"]))
+    logging.info(" - encrypted symmetric key: {}".format(enc_symm_key))
+
+    symm_key = rsa_decrypt(n, d, enc_symm_key)
+    logging.info(" - symmetric key: {}".format(symm_key))
+
+    message = "Hello, "
+    logging.info(" - message: {}".format(message))
+
+    c_msg = AES_encrypt(symm_key, message)
+    logging.info(" - encrypted message: {}".format(c_msg))
+
+    b_msg = {}
+    b_msg["opcode"] = 2
+    b_msg["type"] = "AES"
+    b_msg["encryption"] = base64.b64encode(c_msg).decode("ascii")
+    logging.debug("b_msg: {}".format(b_msg))
+
+    b_js = json.dumps(b_msg)
+    logging.debug("b_js: {}".format(b_js))
+
+    b_bytes = b_js.encode("ascii")
+    logging.debug("b_bytes: {}".format(b_bytes))
+
+    conn.send(b_bytes)
+    logging.info("[*] Sent: {}".format(b_js))
+    
+    a_msg = conn.recv(1024)
+    logging.debug("a_msg: {}".format(a_msg))
+
+    a_js = a_msg.decode("ascii")
+    logging.debug("a_js: {}".format(a_js))
+
+    a_msg = json.loads(a_js)
+    logging.debug("a_msg: {}".format(a_msg))
+
+    logging.info("[*] Received: {}".format(a_js))
+    logging.info(" - opcode: {}".format(a_msg["opcode"]))
+    logging.info(" - type: {}".format(a_msg["type"]))
+    logging.info(" - encrypted message: {}".format(a_msg["encryption"]))
+
+    decrypted_message = AES_decrypt(symm_key, base64.b64decode(a_msg["encryption"].encode("ascii") + b"=="))
+    logging.info(" - decrypted message: {}".format(decrypted_message))
+
+    logging.info("[*] Bob RSA protocol ends")
+
+    conn.close()
+
+def DH_protocol(conn):
+    pass
+
 def run(addr, port):
     bob = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     bob.bind((addr, port))
@@ -86,6 +171,7 @@ def command_line_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-a", "--addr", metavar="<bob's IP address>", help="Bob's IP address", type=str, default="0.0.0.0")
     parser.add_argument("-p", "--port", metavar="<bob's open port>", help="Bob's port", type=int, required=True)
+    parser.add_argument("-m", "--message", metavar="<message>", help="Message to be encrypted", type=str, default="Hello, world!")
     parser.add_argument("-l", "--log", metavar="<log level (DEBUG/INFO/WARNING/ERROR/CRITICAL)>", help="Log level (DEBUG/INFO/WARNING/ERROR/CRITICAL)", type=str, default="INFO")
     args = parser.parse_args()
     return args
