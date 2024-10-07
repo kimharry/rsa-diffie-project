@@ -62,8 +62,6 @@ def run(addr, port, option):
         pass
     elif option == 3:
         pass
-    elif option == 4:
-        pass
 
     conn.close()
 
@@ -81,7 +79,7 @@ def main():
     log_level = args.log
     logging.basicConfig(level=log_level)
 
-    if args.option < 1 or args.option > 4:
+    if args.option < 1 or args.option > 3:
         logging.error("Invalid option")
         return
 

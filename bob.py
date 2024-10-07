@@ -10,9 +10,9 @@ from utilities.DH_funcs import *
 def handler(sock):
     sock.close()
 
-def RSAKey_protocol(conn):
-    logging.info("[*] Bob RSAKey protocol starts")
-    
+def general_protocol(conn):
+    logging.info("[*] Bob General protocol starts")
+
     a_bytes = conn.recv(1024)
     logging.debug("a_bytes: {}".format(a_bytes))
 
@@ -25,6 +25,21 @@ def RSAKey_protocol(conn):
     logging.info("[*] Received: {}".format(a_js))
     logging.info(" - opcode: {}".format(a_msg["opcode"]))
     logging.info(" - type: {}".format(a_msg["type"]))
+
+    if a_msg["type"] == "RSAKey":
+        RSAKey_protocol(conn)
+    elif a_msg["type"] == "RSA":
+        # RSA_protocol(conn)
+        pass
+    elif a_msg["type"] == "DH":
+        # DH_protocol(conn)
+        pass
+    else:
+        logging.error(" - Unknown protocol type")
+        return
+
+def RSAKey_protocol(conn):
+    logging.info("[*] Bob RSAKey protocol starts")
 
     _, p, q, e, d = rsa_keygen()
 
@@ -63,7 +78,7 @@ def run(addr, port):
 
         logging.info("[*] Bob accepts the connection from {}:{}".format(info[0], info[1]))
 
-        conn_handle = threading.Thread(target=RSAKey_protocol, args=(conn,))
+        conn_handle = threading.Thread(target=general_protocol, args=(conn,))
         conn_handle.start()
 
 
