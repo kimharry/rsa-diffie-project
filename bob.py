@@ -45,8 +45,8 @@ def RSAKey_protocol(conn):
     b_msg = {}
     b_msg["opcode"] = 0
     b_msg["type"] = "RSAKey"
-    b_msg["public"] = base64.b64encode(str(e).encode("ascii")).decode("ascii")
-    b_msg["private"] = base64.b64encode(str(d).encode("ascii")).decode("ascii")
+    b_msg["public"] = int_to_base64(e)
+    b_msg["private"] = int_to_base64(d)
     b_msg["parameters"] = {}
     b_msg["parameters"]["p"] = p
     b_msg["parameters"]["q"] = q
@@ -73,7 +73,7 @@ def RSA_protocol(conn):
     b_msg = {}
     b_msg["opcode"] = 1
     b_msg["type"] = "RSA"
-    b_msg["public"] = base64.b64encode(str(e).encode("ascii")).decode("ascii")
+    b_msg["public"] = int_to_base64(e)
     b_msg["parameters"] = {}
     b_msg["parameters"]["n"] = n
     logging.debug("b_msg: {}".format(b_msg))
@@ -96,7 +96,7 @@ def RSA_protocol(conn):
     a_msg = json.loads(a_js)
     logging.debug("a_msg: {}".format(a_msg))
 
-    enc_symm_key = bytes(base64.b64decode(a_msg["encryption"].encode("ascii") + b"==").decode("ascii"), "ascii")
+    enc_symm_key = base64_to_list(a_msg["encryption"])
 
     logging.info("[*] Received: {}".format(a_js))
     logging.info(" - opcode: {}".format(a_msg["opcode"]))
@@ -104,6 +104,7 @@ def RSA_protocol(conn):
     logging.info(" - encrypted symmetric key: {}".format(enc_symm_key))
 
     symm_key = rsa_decrypt(n, d, enc_symm_key)
+    symm_key = base64_to_bytes(symm_key)
     logging.info(" - symmetric key: {}".format(symm_key))
 
     message = "Hello, "
@@ -115,7 +116,7 @@ def RSA_protocol(conn):
     b_msg = {}
     b_msg["opcode"] = 2
     b_msg["type"] = "AES"
-    b_msg["encryption"] = base64.b64encode(c_msg).decode("ascii")
+    b_msg["encryption"] = bytes_to_base64(c_msg)
     logging.debug("b_msg: {}".format(b_msg))
 
     b_js = json.dumps(b_msg)
@@ -141,7 +142,7 @@ def RSA_protocol(conn):
     logging.info(" - type: {}".format(a_msg["type"]))
     logging.info(" - encrypted message: {}".format(a_msg["encryption"]))
 
-    decrypted_message = AES_decrypt(symm_key, base64.b64decode(a_msg["encryption"].encode("ascii") + b"=="))
+    decrypted_message = AES_decrypt(symm_key, base64_to_bytes(a_msg["encryption"]))
     logging.info(" - decrypted message: {}".format(decrypted_message))
 
     logging.info("[*] Bob RSA protocol ends")

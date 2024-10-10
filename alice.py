@@ -6,6 +6,7 @@ import base64
 from utilities.RSA_funcs import *
 from utilities.DH_funcs import *
 from utilities.AES_funcs import *
+from utilities.utility import *
 
 
 def RSAKey_protocol(conn):
@@ -34,8 +35,8 @@ def RSAKey_protocol(conn):
     b_msg = json.loads(b_js)
     logging.debug("b_msg: {}".format(b_msg))
 
-    public = int(base64.b64decode(b_msg["public"].encode("ascii") + b"==").decode("ascii"))
-    private = int(base64.b64decode(b_msg["private"].encode("ascii") + b"==").decode("ascii"))
+    public = base64_to_int(b_msg["public"])
+    private = base64_to_int(b_msg["private"])
 
     logging.info("[*] Received: {}".format(b_js))
     logging.info(" - public key: {}".format(public))
@@ -79,7 +80,7 @@ def RSA_protocol(conn):
     b_msg = json.loads(b_js)
     logging.debug("b_msg: {}".format(b_msg))
 
-    public = int(base64.b64decode(b_msg["public"].encode("ascii") + b"==").decode("ascii"))
+    public = base64_to_int(b_msg["public"])
     n = b_msg["parameters"]["n"]
 
     logging.info("[*] Received: {}".format(b_js))
@@ -89,13 +90,13 @@ def RSA_protocol(conn):
     symm_key = AES_keygen()
     logging.info(" - symmetric key: {}".format(symm_key))
 
-    c = rsa_encrypt(n, public, str(symm_key))
+    c = rsa_encrypt(n, public, bytes_to_base64(symm_key))
     logging.info(" - encrypted symmetric key: {}".format(c))
 
     a_msg = {}
     a_msg["opcode"] = 2
     a_msg["type"] = "RSA"
-    a_msg["encryption"] = base64.b64encode(str(c).encode("ascii")).decode("ascii")
+    a_msg["encryption"] = list_to_base64(c)
     logging.debug("a_msg: {}".format(a_msg))
 
     a_js = json.dumps(a_msg)
@@ -107,10 +108,10 @@ def RSA_protocol(conn):
     conn.send(a_bytes)
     logging.info("[*] Sent: {}".format(a_js))
 
-    b_msg = conn.recv(1024)
-    logging.debug("b_msg3: {}".format(b_msg))
+    b_bytes = conn.recv(1024)
+    logging.debug("b_bytes: {}".format(b_msg))
 
-    b_js = b_msg.decode("ascii")
+    b_js = b_bytes.decode("ascii")
     logging.debug("b_js: {}".format(b_js))
 
     b_msg = json.loads(b_js)
@@ -121,7 +122,7 @@ def RSA_protocol(conn):
     logging.info(" - type: {}".format(b_msg["type"]))
     logging.info(" - encrypted message: {}".format(b_msg["encryption"]))
 
-    decrypted_message = AES_decrypt(symm_key, base64.b64decode(b_msg["encryption"].encode("ascii") + b"=="))
+    decrypted_message = AES_decrypt(symm_key, base64_to_bytes(b_msg["encryption"]))
     logging.info(" - decrypted message: {}".format(decrypted_message))
 
     new_message = "world!"
@@ -133,7 +134,7 @@ def RSA_protocol(conn):
     a_msg = {}
     a_msg["opcode"] = 2
     a_msg["type"] = "AES"
-    a_msg["encryption"] = base64.b64encode(c_msg).decode("ascii")
+    a_msg["encryption"] = bytes_to_base64(c_msg)
     logging.debug("a_msg: {}".format(a_msg))
 
     a_js = json.dumps(a_msg)

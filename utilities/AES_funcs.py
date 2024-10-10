@@ -16,4 +16,13 @@ def AES_decrypt(key, encrypted):
     aes = AES.new(key, AES.MODE_ECB)
     dec = aes.decrypt(encrypted)
     pad = dec[-1]
-    return dec[:-pad]
+    return dec[:-pad].decode("ascii")
+
+if __name__ == '__main__':
+    key = AES_keygen()
+    print(key)
+    msg = "Hello, world!"
+    c = AES_encrypt(key, msg)
+    print(c)
+    m = AES_decrypt(key, c)
+    print(m)
