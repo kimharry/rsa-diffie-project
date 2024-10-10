@@ -3,7 +3,6 @@ import threading
 import argparse
 import logging
 import json
-import base64
 from utilities.RSA_funcs import *
 from utilities.DH_funcs import * 
 from utilities.AES_funcs import *
