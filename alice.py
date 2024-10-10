@@ -16,28 +16,16 @@ def RSAKey_protocol(conn):
     a_msg["type"] = "RSAKey"
     logging.debug("a_msg: {}".format(a_msg))
 
-    a_js = json.dumps(a_msg)
-    logging.debug("a_js: {}".format(a_js))
+    send_packet(conn, a_msg)
+    logging.info("[*] Sent: {}".format(a_msg))
 
-    a_bytes = a_js.encode("ascii")
-    logging.debug("a_bytes: {}".format(a_bytes))
-
-    conn.send(a_bytes)
-    logging.info("[*] Sent: {}".format(a_js))
-
-    b_bytes = conn.recv(1024)
-    logging.debug("b_bytes: {}".format(b_bytes))
-
-    b_js = b_bytes.decode("ascii")
-    logging.debug("b_js: {}".format(b_js))
-
-    b_msg = json.loads(b_js)
+    b_msg = recv_packet(conn)
     logging.debug("b_msg: {}".format(b_msg))
 
     public = base64_to_int(b_msg["public"])
     private = base64_to_int(b_msg["private"])
 
-    logging.info("[*] Received: {}".format(b_js))
+    logging.info("[*] Received: {}".format(b_msg))
     logging.info(" - public key: {}".format(public))
     logging.info(" - private key: {}".format(private))
     logging.info(" - p: {}".format(b_msg["parameters"]["p"]))
@@ -61,28 +49,16 @@ def RSA_protocol(conn):
     a_msg["type"] = "RSA"
     logging.debug("a_msg: {}".format(a_msg))
 
-    a_js = json.dumps(a_msg)
-    logging.debug("a_js: {}".format(a_js))
+    send_packet(conn, a_msg)
+    logging.info("[*] Sent: {}".format(a_msg))
 
-    a_bytes = a_js.encode("ascii")
-    logging.debug("a_bytes: {}".format(a_bytes))
-
-    conn.send(a_bytes)
-    logging.info("[*] Sent: {}".format(a_js))
-
-    b_bytes = conn.recv(1024)
-    logging.debug("b_bytes: {}".format(b_bytes))
-
-    b_js = b_bytes.decode("ascii")
-    logging.debug("b_js: {}".format(b_js))
-
-    b_msg = json.loads(b_js)
+    b_msg = recv_packet(conn)
     logging.debug("b_msg: {}".format(b_msg))
 
     public = base64_to_int(b_msg["public"])
     n = b_msg["parameters"]["n"]
 
-    logging.info("[*] Received: {}".format(b_js))
+    logging.info("[*] Received: {}".format(b_msg))
     logging.info(" - public key: {}".format(public))
     logging.info(" - n: {}".format(n))
 
@@ -98,25 +74,13 @@ def RSA_protocol(conn):
     a_msg["encryption"] = list_to_base64(c)
     logging.debug("a_msg: {}".format(a_msg))
 
-    a_js = json.dumps(a_msg)
-    logging.debug("a_js: {}".format(a_js))
+    send_packet(conn, a_msg)
+    logging.info("[*] Sent: {}".format(a_msg))
 
-    a_bytes = a_js.encode("ascii")
-    logging.debug("a_bytes: {}".format(a_bytes))
-
-    conn.send(a_bytes)
-    logging.info("[*] Sent: {}".format(a_js))
-
-    b_bytes = conn.recv(1024)
-    logging.debug("b_bytes: {}".format(b_msg))
-
-    b_js = b_bytes.decode("ascii")
-    logging.debug("b_js: {}".format(b_js))
-
-    b_msg = json.loads(b_js)
+    b_msg = recv_packet(conn)
     logging.debug("b_msg: {}".format(b_msg))
 
-    logging.info("[*] Received: {}".format(b_js))
+    logging.info("[*] Received: {}".format(b_msg))
     logging.info(" - opcode: {}".format(b_msg["opcode"]))
     logging.info(" - type: {}".format(b_msg["type"]))
     logging.info(" - encrypted message: {}".format(b_msg["encryption"]))
@@ -136,14 +100,8 @@ def RSA_protocol(conn):
     a_msg["encryption"] = bytes_to_base64(c_msg)
     logging.debug("a_msg: {}".format(a_msg))
 
-    a_js = json.dumps(a_msg)
-    logging.debug("a_js: {}".format(a_js))
-
-    a_bytes = a_js.encode("ascii")
-    logging.debug("a_bytes: {}".format(a_bytes))
-
-    conn.send(a_bytes)
-    logging.info("[*] Sent: {}".format(a_js))
+    send_packet(conn, a_msg)
+    logging.info("[*] Sent: {}".format(a_msg))
 
     logging.info("[*] Alice RSA protocol ends")
 

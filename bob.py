@@ -6,6 +6,7 @@ import json
 from utilities.RSA_funcs import *
 from utilities.DH_funcs import * 
 from utilities.AES_funcs import *
+from utilities.utility import *
 
 def handler(sock):
     sock.close()
@@ -13,16 +14,10 @@ def handler(sock):
 def general_protocol(conn):
     logging.info("[*] Bob General protocol starts")
 
-    a_bytes = conn.recv(1024)
-    logging.debug("a_bytes: {}".format(a_bytes))
-
-    a_js = a_bytes.decode("ascii")
-    logging.debug("a_js: {}".format(a_js))
-
-    a_msg = json.loads(a_js)
+    a_msg = recv_packet(conn)
     logging.debug("a_msg: {}".format(a_msg))
 
-    logging.info("[*] Received: {}".format(a_js))
+    logging.info("[*] Received: {}".format(a_msg))
     logging.info(" - opcode: {}".format(a_msg["opcode"]))
     logging.info(" - type: {}".format(a_msg["type"]))
 
@@ -51,14 +46,8 @@ def RSAKey_protocol(conn):
     b_msg["parameters"]["q"] = q
     logging.debug("b_msg: {}".format(b_msg))
 
-    b_js = json.dumps(b_msg)
-    logging.debug("b_js: {}".format(b_js))
-
-    b_bytes = b_js.encode("ascii")
-    logging.debug("b_bytes: {}".format(b_bytes))
-
-    conn.send(b_bytes)
-    logging.info("[*] Sent: {}".format(b_js))
+    send_packet(conn, b_msg)
+    logging.info("[*] Sent: {}".format(b_msg))
 
     logging.info("[*] Bob RSAKey protocol ends")
 
@@ -77,27 +66,15 @@ def RSA_protocol(conn):
     b_msg["parameters"]["n"] = n
     logging.debug("b_msg: {}".format(b_msg))
 
-    b_js = json.dumps(b_msg)
-    logging.debug("b_js: {}".format(b_js))
+    send_packet(conn, b_msg)
+    logging.info("[*] Sent: {}".format(b_msg))
 
-    b_bytes = b_js.encode("ascii")
-    logging.debug("b_bytes: {}".format(b_bytes))
-
-    conn.send(b_bytes)
-    logging.info("[*] Sent: {}".format(b_js))
-
-    a_bytes = conn.recv(1024)
-    logging.debug("a_bytes: {}".format(a_bytes))
-
-    a_js = a_bytes.decode("ascii")
-    logging.debug("a_js: {}".format(a_js))
-
-    a_msg = json.loads(a_js)
+    a_msg = recv_packet(conn)
     logging.debug("a_msg: {}".format(a_msg))
 
     enc_symm_key = base64_to_list(a_msg["encryption"])
 
-    logging.info("[*] Received: {}".format(a_js))
+    logging.info("[*] Received: {}".format(a_msg))
     logging.info(" - opcode: {}".format(a_msg["opcode"]))
     logging.info(" - type: {}".format(a_msg["type"]))
     logging.info(" - encrypted symmetric key: {}".format(enc_symm_key))
@@ -118,25 +95,13 @@ def RSA_protocol(conn):
     b_msg["encryption"] = bytes_to_base64(c_msg)
     logging.debug("b_msg: {}".format(b_msg))
 
-    b_js = json.dumps(b_msg)
-    logging.debug("b_js: {}".format(b_js))
-
-    b_bytes = b_js.encode("ascii")
-    logging.debug("b_bytes: {}".format(b_bytes))
-
-    conn.send(b_bytes)
-    logging.info("[*] Sent: {}".format(b_js))
+    send_packet(conn, b_msg)
+    logging.info("[*] Sent: {}".format(b_msg))
     
-    a_msg = conn.recv(1024)
+    a_msg = recv_packet(conn)
     logging.debug("a_msg: {}".format(a_msg))
 
-    a_js = a_msg.decode("ascii")
-    logging.debug("a_js: {}".format(a_js))
-
-    a_msg = json.loads(a_js)
-    logging.debug("a_msg: {}".format(a_msg))
-
-    logging.info("[*] Received: {}".format(a_js))
+    logging.info("[*] Received: {}".format(a_msg))
     logging.info(" - opcode: {}".format(a_msg["opcode"]))
     logging.info(" - type: {}".format(a_msg["type"]))
     logging.info(" - encrypted message: {}".format(a_msg["encryption"]))

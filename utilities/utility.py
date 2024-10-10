@@ -1,5 +1,6 @@
 import math
 import base64
+import json
 
 def is_prime(n):
     if n == 1:
@@ -41,3 +42,11 @@ def list_to_base64(l: list) -> str:
 
 def base64_to_list(b: str) -> list:
     return eval(base64.b64decode(b.encode("ascii") + b"==").decode("ascii"))
+
+def recv_packet(conn) -> dict:
+    b_bytes = conn.recv(1024)
+    return json.loads(b_bytes.decode("ascii"))
+
+def send_packet(conn, packet: dict):
+    b_bytes = json.dumps(packet).encode("ascii")
+    conn.send(b_bytes)
