@@ -114,7 +114,64 @@ def RSA_protocol(conn):
     conn.close()
 
 def DH_protocol(conn):
-    pass
+    logging.info("[*] Bob DH protocol starts")
+
+    p, g, y, x = dh_keygen()
+
+    b_msg = {}
+    b_msg["opcode"] = 1
+    b_msg["type"] = "DH"
+    b_msg["public"] = int_to_base64(y)
+    b_msg["parameter"] = {}
+    b_msg["parameter"]["p"] = p
+    b_msg["parameter"]["g"] = g
+    logging.debug("b_msg: {}".format(b_msg))
+
+    send_packet(conn, b_msg)
+    logging.info("[*] Sent: {}".format(b_msg))
+
+    a_msg = recv_packet(conn)
+    logging.debug("a_msg: {}".format(a_msg))
+
+    public = base64_to_int(a_msg["public"])
+    n = a_msg["parameters"]["p"]
+
+    logging.info("[*] Received: {}".format(a_msg))
+    logging.info(" - public key: {}".format(public))
+    logging.info(" - n: {}".format(n))
+
+    k = dh_shared_key(n, public, x)
+    logging.info(" - shared key: {}".format(k))
+
+    message = "Hello, "
+    logging.info(" - message: {}".format(message))
+
+    c_msg = AES_encrypt(int_to_bytes(k), message)
+    logging.info(" - encrypted message: {}".format(c_msg))
+
+    b_msg = {}
+    b_msg["opcode"] = 2
+    b_msg["type"] = "AES"
+    b_msg["encryption"] = bytes_to_base64(c_msg)
+    logging.debug("b_msg: {}".format(b_msg))
+
+    send_packet(conn, b_msg)
+    logging.info("[*] Sent: {}".format(b_msg))
+
+    a_msg = recv_packet(conn)
+    logging.debug("a_msg: {}".format(a_msg))
+
+    logging.info("[*] Received: {}".format(a_msg))
+    logging.info(" - opcode: {}".format(a_msg["opcode"]))
+    logging.info(" - type: {}".format(a_msg["type"]))
+    logging.info(" - encrypted message: {}".format(a_msg["encryption"]))
+
+    decrypted_message = AES_decrypt(int_to_bytes(k), base64_to_bytes(a_msg["encryption"]))
+    logging.info(" - decrypted message: {}".format(decrypted_message))
+
+    logging.info("[*] Bob DH protocol ends")
+
+    conn.close()
 
 def run(addr, port):
     bob = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
