@@ -2,12 +2,9 @@ import random
 from utilities.utility import *
 
 def rsa_keygen():
-    p = 0
-    q = 0
-    while not is_prime(p):
-        p = random.randint(100, 1000)
-    while not is_prime(q):
-        q = random.randint(100, 1000)
+    p = gen_prime(0, 65535)
+    q = gen_prime(0, 65535)
+    
     n = p * q
     phi = (p - 1) * (q - 1)
     e = 0

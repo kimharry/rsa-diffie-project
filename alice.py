@@ -133,49 +133,46 @@ def DH_protocol(conn):
     b_msg = recv_packet(conn)
     logging.debug("b_msg: {}".format(b_msg))
 
-    bob_public = b_msg["public"]
+    bob_public = base64_to_int(b_msg["public"])
     p = b_msg["parameter"]["p"]
     g = b_msg["parameter"]["g"]
 
     logging.info("[*] Received: {}".format(b_msg))
-    logging.info(" - Bob's public key: {}".format(bob_public))
+    logging.info(" - public key: {}".format(bob_public))
     logging.info(" - p: {}".format(p))
     logging.info(" - g: {}".format(g))
 
-    if verify_dh_keypair(p, g, y, x):
-        logging.info(" - DH key pair is verified")
+    if is_prime(p):
+        logging.info(" - prime modulus")
     else:
-        logging.error(" - DH key pair is not verified")
+        logging.error(" - not prime modulus")
+        a_msg = {}
+        a_msg["opcode"] = 3
+        a_msg["error"] = "incorrect prime number"
         return
 
-    k = dh_shared_key(p, g, y, x)
-    logging.info(" - shared key: {}".format(k))
+    if is_correct_generator(p, g):
+        logging.info(" - correct generator")
+    else:
+        logging.error(" - incorrect generator")
+        a_msg = {}
+        a_msg["opcode"] = 3
+        a_msg["error"] = "incorrect generator"
+        return
 
-    message = "Hello, world!"
-    logging.info(" - message: {}".format(message))
-
-    c_msg = AES_encrypt(int_to_bytes(k), message)
-    logging.info(" - encrypted message: {}".format(c_msg))
+    _, _, b, alice_public = dh_keygen(p, g)
 
     a_msg = {}
-    a_msg["opcode"] = 2
-    a_msg["type"] = "AES"
-    a_msg["encryption"] = bytes_to_base64(c_msg)
+    a_msg["opcode"] = 1
+    a_msg["type"] = "DH"
+    a_msg["public"] = int_to_base64(alice_public)
     logging.debug("a_msg: {}".format(a_msg))
 
     send_packet(conn, a_msg)
     logging.info("[*] Sent: {}".format(a_msg))
 
-    b_msg = recv_packet(conn)
-    logging.debug("b_msg: {}".format(b_msg))
-
-    logging.info("[*] Received: {}".format(b_msg))
-    logging.info(" - opcode: {}".format(b_msg["opcode"]))
-    logging.info(" - type: {}".format(b_msg["type"]))
-    logging.info(" - encrypted message: {}".format(b_msg["encryption"]))
-
-    decrypted_message = AES_decrypt(int_to_bytes(k), base64_to_bytes(b_msg["encryption"]))
-    logging.info(" - decrypted message: {}".format(decrypted_message))
+    shared_key = dh_shared_key(p, bob_public, b)
+    logging.info(" - shared key: {}".format(shared_key))
 
     logging.info("[*] Alice DH protocol ends")
 

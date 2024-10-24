@@ -1,6 +1,7 @@
 import math
 import base64
 import json
+import random
 
 def is_prime(n):
     if n == 1:
@@ -13,6 +14,12 @@ def is_prime(n):
         if n % i == 0:
             return False
     return True
+
+def gen_prime(n1, n2):
+    while True:
+        n = random.randint(n1, n2)
+        if is_prime(n):
+            return n
 
 def gcd(a, b):
     while b != 0:
