@@ -1,18 +1,39 @@
 import math
 import base64
 import json
+import random
 
-def is_prime(n):
+def modular(base, exponent, mod):
+    result = 1
+    base = base % mod 
+    
+    while exponent > 0:
+        if (exponent % 2) == 1:
+            result = (result * base) % mod
+        
+        exponent = exponent // 2
+        base = (base * base) % mod
+    
+    return result
+
+
+def is_prime_fermat(n, k=5):
     if n == 1:
         return False
-    if n == 2:
+    
+    if n == 2 or n == 3:
         return True
+    
     if n % 2 == 0:
         return False
-    for i in range(3, int(math.sqrt(n)) + 1, 2):
-        if n % i == 0:
+    
+    for _ in range(k):
+        a = random.randint(2, n - 2)
+        if modular(a, n - 1, n) != 1:
             return False
+    
     return True
+
 
 def gcd(a, b):
     while b != 0:
