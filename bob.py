@@ -114,7 +114,28 @@ def RSA_protocol(conn):
     conn.close()
 
 def DH_protocol(conn):
-    pass
+    logging.info("[*] Bob DH protocol starts")
+
+    p, g, a, bob_public = dh_keygen()
+
+    b_msg = {}
+    b_msg["opcode"] = 1
+    b_msg["type"] = "DH"
+    b_msg["public"] = int_to_base64(bob_public)
+    b_msg["parameter"] = {}
+    b_msg["parameter"]["p"] = p
+    b_msg["parameter"]["g"] = g
+    logging.debug("b_msg: {}".format(b_msg))
+
+    send_packet(conn, b_msg)
+    logging.info("[*] Sent: {}".format(b_msg))
+
+    a_msg = recv_packet(conn)
+    logging.debug("a_msg: {}".format(a_msg))
+
+    alice_public = base64_to_int(a_msg["public"])
+    shared_key = dh_shared_key(p, g, alice_public, a)
+    logging.info(" - shared key: {}".format(shared_key))
 
 def run(addr, port):
     bob = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

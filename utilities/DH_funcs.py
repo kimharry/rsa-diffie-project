@@ -1,23 +1,21 @@
 import random
 from utilities.utility import *
 
-def dh_keygen():
-    p = 0
-    g = 0
-    while not is_prime(p):
-        p = random.randint(100, 1000)
-    while not is_prime(g):
-        g = random.randint(2, p - 1)
-    x = random.randint(2, p - 1)
-    y = (g ** x) % p
-    return (p, g, y, x)
+def dh_keygen(p=0, g=0):
+    if p == 0:
+        p = gen_prime(0, 65536)
+    if g == 0:
+        g = gen_prime(2, p - 1)
+    a = random.randint(2, p - 1)
+    return (p, g, a, (g ** a) % p)
 
-def dh_shared_key(p, g, y, x):
-    return (y ** x) % p
+def dh_shared_key(p, g, public, private):
+    return (public ** private) % p
 
-def verify_dh_keypair(p, g, y, x):
-    if (g ** x) % p == y:
-        return True
+def is_correct_generator(p, g):
+    if g > 1 and g < p:
+        if (g ** (p - 1)) % p == 1:
+            return True
     return False
 
 if __name__ == '__main__':
@@ -25,4 +23,3 @@ if __name__ == '__main__':
     print(p, g, y, x)
     k = dh_shared_key(p, g, y, x)
     print(k)
-    print(verify_dh_keypair(p, g, y, x))

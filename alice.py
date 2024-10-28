@@ -31,6 +31,18 @@ def RSAKey_protocol(conn):
     logging.info(" - p: {}".format(b_msg["parameters"]["p"]))
     logging.info(" - q: {}".format(b_msg["parameters"]["q"]))
 
+    # primality test on p and q respectively
+    if is_prime(b_msg["parameters"]["p"]):
+        logging.info(" - p is prime")
+    else:
+        logging.error(" - p is not prime")
+        return
+    if is_prime(b_msg["parameters"]["q"]):
+        logging.info(" - q is prime")
+    else:
+        logging.error(" - q is not prime")
+        return
+
     if verify_rsa_keypair(b_msg["parameters"]["p"], b_msg["parameters"]["q"], public, private):
         logging.info(" - RSA key pair is verified")
     else:
@@ -108,7 +120,63 @@ def RSA_protocol(conn):
     conn.close()
     
 def DH_protocol(conn):
-    pass
+    logging.info("[*] Alice DH protocol starts")
+
+    a_msg = {}
+    a_msg["opcode"] = 0
+    a_msg["type"] = "DH"
+    logging.debug("a_msg: {}".format(a_msg))
+
+    send_packet(conn, a_msg)
+    logging.info("[*] Sent: {}".format(a_msg))
+
+    b_msg = recv_packet(conn)
+    logging.debug("b_msg: {}".format(b_msg))
+
+    bob_public = base64_to_int(b_msg["public"])
+    p = b_msg["parameter"]["p"]
+    g = b_msg["parameter"]["g"]
+
+    logging.info("[*] Received: {}".format(b_msg))
+    logging.info(" - public key: {}".format(bob_public))
+    logging.info(" - p: {}".format(p))
+    logging.info(" - g: {}".format(g))
+
+    if is_prime(p):
+        logging.info(" - prime modulus")
+    else:
+        logging.error(" - not prime modulus")
+        a_msg = {}
+        a_msg["opcode"] = 3
+        a_msg["error"] = "incorrect prime number"
+        return
+
+    if is_correct_generator(p, g):
+        logging.info(" - correct generator")
+    else:
+        logging.error(" - incorrect generator")
+        a_msg = {}
+        a_msg["opcode"] = 3
+        a_msg["error"] = "incorrect generator"
+        return
+
+    _, _, b, alice_public = dh_keygen(p, g)
+
+    a_msg = {}
+    a_msg["opcode"] = 1
+    a_msg["type"] = "DH"
+    a_msg["public"] = int_to_base64(alice_public)
+    logging.debug("a_msg: {}".format(a_msg))
+
+    send_packet(conn, a_msg)
+    logging.info("[*] Sent: {}".format(a_msg))
+
+    shared_key = dh_shared_key(p, bob_public, b)
+    logging.info(" - shared key: {}".format(shared_key))
+
+    logging.info("[*] Alice DH protocol ends")
+
+    conn.close()
 
 def run(addr, port, option):
     conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

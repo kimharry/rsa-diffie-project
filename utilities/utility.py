@@ -34,6 +34,11 @@ def is_prime(n, k=5):
     
     return True
 
+def gen_prime(n1, n2):
+    while True:
+        n = random.randint(n1, n2)
+        if is_prime(n):
+            return n
 
 def gcd(a, b):
     while b != 0:
