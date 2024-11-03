@@ -2,7 +2,7 @@ import socket
 import argparse
 import logging
 import json
-from utilities.RSA_funcs import *
+from utilities.rsa_funcs import *
 from utilities.DH_funcs import *
 from utilities.AES_funcs import *
 from utilities.utility import *
