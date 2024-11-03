@@ -1,9 +1,9 @@
 import random
 from utilities.utility import *
 
-def rsa_keygen():
-    p = gen_prime(0, 65535)
-    q = gen_prime(0, 65535)
+def rsa_keygen(p_range=(0, 65535), q_range=(0, 65535)):
+    p = gen_prime(p_range[0], p_range[1])
+    q = gen_prime(q_range[0], q_range[1])
     
     n = p * q
     phi = (p - 1) * (q - 1)

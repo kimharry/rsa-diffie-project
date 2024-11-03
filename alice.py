@@ -14,40 +14,31 @@ def RSAKey_protocol(conn):
     a_msg = {}
     a_msg["opcode"] = 0
     a_msg["type"] = "RSAKey"
-    logging.debug("a_msg: {}".format(a_msg))
 
     send_packet(conn, a_msg)
     logging.info("[*] Sent: {}".format(a_msg))
 
     b_msg = recv_packet(conn)
-    logging.debug("b_msg: {}".format(b_msg))
-
-    public = base64_to_int(b_msg["public"])
-    private = base64_to_int(b_msg["private"])
-
     logging.info("[*] Received: {}".format(b_msg))
-    logging.info(" - public key: {}".format(public))
-    logging.info(" - private key: {}".format(private))
-    logging.info(" - p: {}".format(b_msg["parameters"]["p"]))
-    logging.info(" - q: {}".format(b_msg["parameters"]["q"]))
 
-    # primality test on p and q respectively
-    if is_prime(b_msg["parameters"]["p"]):
-        logging.info(" - p is prime")
-    else:
+    private = b_msg["private"]
+    public = b_msg["public"]
+    p = b_msg["parameter"]["p"]
+    q = b_msg["parameter"]["q"]
+
+    if not is_prime(p):
         logging.error(" - p is not prime")
         return
-    if is_prime(b_msg["parameters"]["q"]):
-        logging.info(" - q is prime")
-    else:
+    if not is_prime(q):
         logging.error(" - q is not prime")
         return
-
-    if verify_rsa_keypair(b_msg["parameters"]["p"], b_msg["parameters"]["q"], public, private):
-        logging.info(" - RSA key pair is verified")
-    else:
-        logging.error(" - RSA key pair is not verified")
+    if not verify_rsa_keypair(p, q, public, private):
+        logging.error(" - invalid key pair")
         return
+    
+    logging.info(" - private key: {}".format(private))
+    logging.info(" - public key: {}".format(public))
+    logging.info(" - key pair verified")
 
     logging.info("[*] Alice RSAKey protocol ends")
 
@@ -197,7 +188,6 @@ def command_line_args():
     parser.add_argument("-a", "--addr", metavar="<bob's address>", help="Bob's address", type=str, required=True)
     parser.add_argument("-p", "--port", metavar="<bob's port>", help="Bob's port", type=int, required=True)
     parser.add_argument("-o", "--option", metavar="<option (1/2/3/4)>", help="Which protocol to run (1/2/3/4)", type=int, required=True)
-    parser.add_argument("-m", "--message", metavar="<message>", help="Message to be encrypted", type=str, default="Hello, world!")
     parser.add_argument("-l", "--log", metavar="<log level (DEBUG/INFO/WARNING/ERROR/CRITICAL)>", help="Log level (DEBUG/INFO/WARNING/ERROR/CRITICAL)", type=str, default="INFO")
     args = parser.parse_args()
     return args

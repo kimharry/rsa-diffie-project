@@ -18,8 +18,6 @@ def general_protocol(conn):
     logging.debug("a_msg: {}".format(a_msg))
 
     logging.info("[*] Received: {}".format(a_msg))
-    logging.info(" - opcode: {}".format(a_msg["opcode"]))
-    logging.info(" - type: {}".format(a_msg["type"]))
 
     if a_msg["type"] == "RSAKey":
         RSAKey_protocol(conn)
@@ -28,23 +26,22 @@ def general_protocol(conn):
     elif a_msg["type"] == "DH":
         DH_protocol(conn)
     else:
-        logging.error(" - Unknown protocol type")
+        logging.error(" - Unknown protocol")
         return
 
 def RSAKey_protocol(conn):
     logging.info("[*] Bob RSAKey protocol starts")
 
-    _, p, q, e, d = rsa_keygen()
+    _, p, q, e, d = rsa_keygen(p_range=(400, 500), q_range=(400, 500))
 
     b_msg = {}
     b_msg["opcode"] = 0
     b_msg["type"] = "RSAKey"
-    b_msg["public"] = int_to_base64(e)
-    b_msg["private"] = int_to_base64(d)
-    b_msg["parameters"] = {}
-    b_msg["parameters"]["p"] = p
-    b_msg["parameters"]["q"] = q
-    logging.debug("b_msg: {}".format(b_msg))
+    b_msg["private"] = d
+    b_msg["public"] = e
+    b_msg["parameter"] = {}
+    b_msg["parameter"]["p"] = p
+    b_msg["parameter"]["q"] = q
 
     send_packet(conn, b_msg)
     logging.info("[*] Sent: {}".format(b_msg))
