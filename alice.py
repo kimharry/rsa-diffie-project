@@ -111,11 +111,29 @@ def DH_protocol(conn, msg):
     public_bob = b_msg1["public"]
 
     if not is_prime(p):
-        logging.error(" - p is not prime")
+        logging.error("incorrect prime number")
+
+        a_err = {}
+        a_err["opcode"] = 3
+        a_err["error"] = "incorrect prime number"
+        send_packet(conn, a_err)
+        logging.info("[*] Sent: {}".format(a_err))
+
+        logging.info("[*] Alice DH protocol ends")
+        conn.close()
         return
     
     if not is_correct_generator(p, g):
-        logging.error(" - g is not a generator")
+        logging.error("incorrect generator")
+
+        a_err = {}
+        a_err["opcode"] = 3
+        a_err["error"] = "incorrect generator"
+        send_packet(conn, a_err)
+        logging.info("[*] Sent: {}".format(a_err))
+
+        logging.info("[*] Alice DH protocol ends")
+        conn.close()
         return
 
     _, _, private_alice, public_alice = dh_keygen(p, g)
@@ -169,10 +187,6 @@ def main():
     log_level = args.log
     logging.basicConfig(level=log_level)
 
-    if args.option < 1 or args.option > 4:
-        logging.error("Invalid option")
-        return
-
     conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     conn.connect((args.addr, args.port))
     logging.info("Alice is connected to {}:{}".format(args.addr, args.port))
@@ -181,8 +195,10 @@ def main():
         RSAKey_protocol(conn)
     elif args.option == 2:
         RSA_protocol(conn, args.msg)
-    elif args.option == 3:
+    elif args.option == 3 or args.option == 4:
         DH_protocol(conn, args.msg)
+    else:
+        logging.error("Invalid option")
 
     conn.close()
     

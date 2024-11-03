@@ -82,7 +82,7 @@ def RSA_protocol(conn, msg):
 
     conn.close()
 
-def DH_protocol(conn, msg):
+def DH_protocol(conn, msg, is_protocol_4=0):
     logging.info("[*] Bob DH protocol starts")
 
     a_msg1 = recv_packet(conn)
@@ -97,14 +97,27 @@ def DH_protocol(conn, msg):
     b_msg1["type"] = "DH"
     b_msg1["public"] = public_bob
     b_msg1["parameter"] = {}
-    b_msg1["parameter"]["p"] = p
-    b_msg1["parameter"]["g"] = g
+    if is_protocol_4 == 0:
+        b_msg1["parameter"]["p"] = p
+        b_msg1["parameter"]["g"] = g
+    elif is_protocol_4 == 1:
+        b_msg1["parameter"]["p"] = p+1
+        b_msg1["parameter"]["g"] = g
+    elif is_protocol_4 == 2:
+        b_msg1["parameter"]["p"] = p
+        b_msg1["parameter"]["g"] = 1
 
     send_packet(conn, b_msg1)
     logging.info("[*] Sent: {}".format(b_msg1))
 
     a_msg2 = recv_packet(conn)
     logging.info("[*] Received: {}".format(a_msg2))
+
+    if a_msg2["opcode"] == 3:
+        logging.error(a_msg2["error"])
+        logging.info("[*] Bob DH protocol ends")
+        conn.close()
+        return
 
     public_alice = a_msg2["public"]
     shared_key = dh_shared_key(p, public_alice, private_bob)
@@ -148,10 +161,6 @@ def main():
     log_level = args.log
     logging.basicConfig(level=log_level)
 
-    if args.option < 1 or args.option > 4:
-        logging.error("Invalid option")
-        return
-
     bob = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     bob.bind((args.addr, args.port))
 
@@ -169,6 +178,10 @@ def main():
         RSA_protocol(conn, args.msg)
     elif args.option == 3:
         DH_protocol(conn, args.msg)
+    elif args.option == 4:
+        DH_protocol(conn, args.msg, random.randint(1, 2))
+    else:
+        logging.error("Invalid option")
 
     conn.close()
 
