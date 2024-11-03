@@ -22,10 +22,10 @@ def rsa_encrypt(n, e, m):
     return c
 
 def rsa_decrypt(n, d, c):
-    m = b""
+    m = []
     for i in c:
-        m += bytes((i ** d) % n)
-    return m
+        m.append((i ** d) % n)
+    return bytes(m)
 
 def verify_rsa_keypair(p, q, e, d):
     n = p * q

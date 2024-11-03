@@ -7,7 +7,7 @@ def AES_keygen():
     return random.randbytes(32)
 
 def AES_encrypt(key, msg):
-    pad = BLOCK_SIZE - len(msg)
+    pad = BLOCK_SIZE - len(msg) % BLOCK_SIZE
     msg = msg + pad * chr(pad)
     aes = AES.new(key, AES.MODE_ECB)
     return aes.encrypt(msg.encode())

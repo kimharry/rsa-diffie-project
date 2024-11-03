@@ -69,7 +69,8 @@ def RSA_protocol(conn, msg):
     logging.info("[*] Received: {}".format(a_msg2))
 
     encrypted_key = a_msg2["encrypted_key"]
-    symm_key = rsa_decrypt(n, d, encrypted_key)
+    logging.debug(" - encrypted key: {}".format(encrypted_key))
+    symm_key =rsa_decrypt(n, d, encrypted_key)
     logging.info(" - symmetric key: {}".format(symm_key))
 
     c_bob = AES_encrypt(symm_key, msg)
