@@ -98,26 +98,48 @@ def RSA_protocol(conn, msg):
 def DH_protocol(conn, msg):
     logging.info("[*] Bob DH protocol starts")
 
-    p, g, a, bob_public = dh_keygen()
+    p, g, private_bob, public_bob = dh_keygen()
 
-    b_msg = {}
-    b_msg["opcode"] = 1
-    b_msg["type"] = "DH"
-    b_msg["public"] = int_to_base64(bob_public)
-    b_msg["parameter"] = {}
-    b_msg["parameter"]["p"] = p
-    b_msg["parameter"]["g"] = g
-    logging.debug("b_msg: {}".format(b_msg))
+    b_msg1 = {}
+    b_msg1["opcode"] = 1
+    b_msg1["type"] = "DH"
+    b_msg1["public"] = public_bob
+    b_msg1["parameter"] = {}
+    b_msg1["parameter"]["p"] = p
+    b_msg1["parameter"]["g"] = g
 
-    send_packet(conn, b_msg)
-    logging.info("[*] Sent: {}".format(b_msg))
+    send_packet(conn, b_msg1)
+    logging.info("[*] Sent: {}".format(b_msg1))
 
-    a_msg = recv_packet(conn)
-    logging.debug("a_msg: {}".format(a_msg))
+    a_msg2 = recv_packet(conn)
+    logging.info("[*] Received: {}".format(a_msg2))
 
-    alice_public = base64_to_int(a_msg["public"])
-    shared_key = dh_shared_key(p, g, alice_public, a)
-    logging.info(" - shared key: {}".format(shared_key))
+    public_alice = a_msg2["public"]
+    shared_key = dh_shared_key(p, public_alice, private_bob)
+    symm_key = shared_key.to_bytes(2, byteorder="big") * 16
+    logging.info(" - shared symmetric key: {}".format(symm_key))
+
+    c_bob = AES_encrypt(symm_key, msg)
+    logging.info(" - encrypted Bob's message: {}".format(c_bob))
+
+    b_msg2 = {}
+    b_msg2["opcode"] = 2
+    b_msg2["type"] = "AES"
+    b_msg2["encryption"] = bytes_to_base64(c_bob)
+
+    send_packet(conn, b_msg2)
+    logging.info("[*] Sent: {}".format(b_msg2))
+
+    a_msg3 = recv_packet(conn)
+    logging.info("[*] Received: {}".format(a_msg3))
+
+    c_alice = base64_to_bytes(a_msg3["encryption"])
+    msg_alice = AES_decrypt(symm_key, c_alice)
+    logging.info(" - decrypted Alice's message: {}".format(msg_alice))
+
+    logging.info("[*] Bob DH protocol ends")
+
+    conn.close()
 
 def run(addr, port, msg):
     bob = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

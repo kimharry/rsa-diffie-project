@@ -96,57 +96,59 @@ def RSA_protocol(conn, msg):
 def DH_protocol(conn, msg):
     logging.info("[*] Alice DH protocol starts")
 
-    a_msg = {}
-    a_msg["opcode"] = 0
-    a_msg["type"] = "DH"
-    logging.debug("a_msg: {}".format(a_msg))
+    a_msg1 = {}
+    a_msg1["opcode"] = 0
+    a_msg1["type"] = "DH"
 
-    send_packet(conn, a_msg)
-    logging.info("[*] Sent: {}".format(a_msg))
+    send_packet(conn, a_msg1)
+    logging.info("[*] Sent: {}".format(a_msg1))
 
-    b_msg = recv_packet(conn)
-    logging.debug("b_msg: {}".format(b_msg))
+    b_msg1 = recv_packet(conn)
+    logging.info("[*] Received: {}".format(b_msg1))
 
-    bob_public = base64_to_int(b_msg["public"])
-    p = b_msg["parameter"]["p"]
-    g = b_msg["parameter"]["g"]
+    p = b_msg1["parameter"]["p"]
+    g = b_msg1["parameter"]["g"]
+    public_bob = b_msg1["public"]
 
-    logging.info("[*] Received: {}".format(b_msg))
-    logging.info(" - public key: {}".format(bob_public))
-    logging.info(" - p: {}".format(p))
-    logging.info(" - g: {}".format(g))
-
-    if is_prime(p):
-        logging.info(" - prime modulus")
-    else:
-        logging.error(" - not prime modulus")
-        a_msg = {}
-        a_msg["opcode"] = 3
-        a_msg["error"] = "incorrect prime number"
+    if not is_prime(p):
+        logging.error(" - p is not prime")
+        return
+    
+    if not is_correct_generator(p, g):
+        logging.error(" - g is not a generator")
         return
 
-    if is_correct_generator(p, g):
-        logging.info(" - correct generator")
-    else:
-        logging.error(" - incorrect generator")
-        a_msg = {}
-        a_msg["opcode"] = 3
-        a_msg["error"] = "incorrect generator"
-        return
+    _, _, private_alice, public_alice = dh_keygen(p, g)
 
-    _, _, b, alice_public = dh_keygen(p, g)
+    shared_key = dh_shared_key(p, public_bob, private_alice)
+    symm_key = shared_key.to_bytes(2, byteorder="big") * 16
+    logging.info(" - shared symmetric key: {}".format(symm_key))
 
-    a_msg = {}
-    a_msg["opcode"] = 1
-    a_msg["type"] = "DH"
-    a_msg["public"] = int_to_base64(alice_public)
-    logging.debug("a_msg: {}".format(a_msg))
+    a_msg2 = {}
+    a_msg2["opcode"] = 1
+    a_msg2["type"] = "DH"
+    a_msg2["public"] = public_alice
 
-    send_packet(conn, a_msg)
-    logging.info("[*] Sent: {}".format(a_msg))
+    send_packet(conn, a_msg2)
+    logging.info("[*] Sent: {}".format(a_msg2))
 
-    shared_key = dh_shared_key(p, bob_public, b)
-    logging.info(" - shared key: {}".format(shared_key))
+    b_msg2 = recv_packet(conn)
+    logging.info("[*] Received: {}".format(b_msg2))
+
+    c_bob = base64_to_bytes(b_msg2["encryption"])
+    msg_bob = AES_decrypt(symm_key, c_bob)
+    logging.info(" - decrypted Bob's message: {}".format(msg_bob))
+
+    c_alice = AES_encrypt(symm_key, msg)
+    logging.info(" - encrypted Alice's message: {}".format(c_alice))
+
+    a_msg3 = {}
+    a_msg3["opcode"] = 2
+    a_msg3["type"] = "AES"
+    a_msg3["encryption"] = bytes_to_base64(c_alice)
+
+    send_packet(conn, a_msg3)
+    logging.info("[*] Sent: {}".format(a_msg3))
 
     logging.info("[*] Alice DH protocol ends")
 
