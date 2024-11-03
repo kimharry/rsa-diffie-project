@@ -1,9 +1,9 @@
 import random
 from utilities.utility import *
 
-def rsa_keygen(p_range=(0, 65535), q_range=(0, 65535)):
-    p = gen_prime(p_range[0], p_range[1])
-    q = gen_prime(q_range[0], q_range[1])
+def rsa_keygen():
+    p = gen_prime(400, 500)
+    q = gen_prime(400, 500)
     
     n = p * q
     phi = (p - 1) * (q - 1)
@@ -18,13 +18,13 @@ def rsa_keygen(p_range=(0, 65535), q_range=(0, 65535)):
 def rsa_encrypt(n, e, m):
     c = []
     for i in m:
-        c.append((ord(i) ** e) % n)
+        c.append((i ** e) % n)
     return c
 
 def rsa_decrypt(n, d, c):
-    m = ""
+    m = b""
     for i in c:
-        m += chr((i ** d) % n)
+        m += bytes((i ** d) % n)
     return m
 
 def verify_rsa_keypair(p, q, e, d):

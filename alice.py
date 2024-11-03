@@ -44,73 +44,56 @@ def RSAKey_protocol(conn):
 
     conn.close()
 
-def RSA_protocol(conn):
+def RSA_protocol(conn, msg):
     logging.info("[*] Alice RSA protocol starts")
 
-    a_msg = {}
-    a_msg["opcode"] = 0
-    a_msg["type"] = "RSA"
-    logging.debug("a_msg: {}".format(a_msg))
+    a_msg1 = {}
+    a_msg1["opcode"] = 0
+    a_msg1["type"] = "RSA"
 
-    send_packet(conn, a_msg)
-    logging.info("[*] Sent: {}".format(a_msg))
+    send_packet(conn, a_msg1)
+    logging.info("[*] Sent: {}".format(a_msg1))
 
-    b_msg = recv_packet(conn)
-    logging.debug("b_msg: {}".format(b_msg))
+    b_msg1 = recv_packet(conn)
+    logging.info("[*] Received: {}".format(b_msg1))
 
-    public = base64_to_int(b_msg["public"])
-    n = b_msg["parameters"]["n"]
-
-    logging.info("[*] Received: {}".format(b_msg))
-    logging.info(" - public key: {}".format(public))
-    logging.info(" - n: {}".format(n))
+    public = b_msg1["public"]
+    n = b_msg1["parameter"]["n"]
 
     symm_key = AES_keygen()
-    logging.info(" - symmetric key: {}".format(symm_key))
+    encrypted_key = rsa_encrypt(n, public, symm_key)
 
-    c = rsa_encrypt(n, public, bytes_to_base64(symm_key))
-    logging.info(" - encrypted symmetric key: {}".format(c))
+    a_msg2 = {}
+    a_msg2["opcode"] = 2
+    a_msg2["type"] = "RSA"
+    a_msg2["encrypted_key"] = encrypted_key
 
-    a_msg = {}
-    a_msg["opcode"] = 2
-    a_msg["type"] = "RSA"
-    a_msg["encryption"] = list_to_base64(c)
-    logging.debug("a_msg: {}".format(a_msg))
+    send_packet(conn, a_msg2)
+    logging.info("[*] Sent: {}".format(a_msg2))
 
-    send_packet(conn, a_msg)
-    logging.info("[*] Sent: {}".format(a_msg))
+    b_msg2 = recv_packet(conn)
+    logging.info("[*] Received: {}".format(b_msg2))
 
-    b_msg = recv_packet(conn)
-    logging.debug("b_msg: {}".format(b_msg))
+    c_bob = base64_to_bytes(b_msg2["encryption"])
+    msg_bob = AES_decrypt(symm_key, c_bob)
+    logging.info(" - decrypted Bob's message: {}".format(msg_bob))
 
-    logging.info("[*] Received: {}".format(b_msg))
-    logging.info(" - opcode: {}".format(b_msg["opcode"]))
-    logging.info(" - type: {}".format(b_msg["type"]))
-    logging.info(" - encrypted message: {}".format(b_msg["encryption"]))
+    c_alice = AES_encrypt(symm_key, msg)
+    logging.info(" - encrypted Alice's message: {}".format(c_alice))
 
-    decrypted_message = AES_decrypt(symm_key, base64_to_bytes(b_msg["encryption"]))
-    logging.info(" - decrypted message: {}".format(decrypted_message))
+    a_msg3 = {}
+    a_msg3["opcode"] = 2
+    a_msg3["type"] = "AES"
+    a_msg3["encryption"] = bytes_to_base64(c_alice)
 
-    new_message = "world!"
-    logging.info(" - new message: {}".format(new_message))
-
-    c_msg = AES_encrypt(symm_key, new_message)
-    logging.info(" - encrypted message: {}".format(c_msg))
-
-    a_msg = {}
-    a_msg["opcode"] = 2
-    a_msg["type"] = "AES"
-    a_msg["encryption"] = bytes_to_base64(c_msg)
-    logging.debug("a_msg: {}".format(a_msg))
-
-    send_packet(conn, a_msg)
-    logging.info("[*] Sent: {}".format(a_msg))
+    send_packet(conn, a_msg3)
+    logging.info("[*] Sent: {}".format(a_msg3))
 
     logging.info("[*] Alice RSA protocol ends")
 
     conn.close()
     
-def DH_protocol(conn):
+def DH_protocol(conn, msg):
     logging.info("[*] Alice DH protocol starts")
 
     a_msg = {}
@@ -177,9 +160,11 @@ def run(addr, port, option):
     if option == 1:
         RSAKey_protocol(conn)
     elif option == 2:
-        RSA_protocol(conn)
+        msg = input("Enter message to send: ")
+        RSA_protocol(conn, msg)
     elif option == 3:
-        DH_protocol(conn)
+        msg = input("Enter message to send: ")
+        DH_protocol(conn, msg)
 
     conn.close()
 
@@ -187,7 +172,7 @@ def command_line_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-a", "--addr", metavar="<bob's address>", help="Bob's address", type=str, required=True)
     parser.add_argument("-p", "--port", metavar="<bob's port>", help="Bob's port", type=int, required=True)
-    parser.add_argument("-o", "--option", metavar="<option (1/2/3/4)>", help="Which protocol to run (1/2/3/4)", type=int, required=True)
+    parser.add_argument("-o", "--option", metavar="<option (1/2/3)>", help="Which protocol to run (1/2/3)", type=int, required=True)
     parser.add_argument("-l", "--log", metavar="<log level (DEBUG/INFO/WARNING/ERROR/CRITICAL)>", help="Log level (DEBUG/INFO/WARNING/ERROR/CRITICAL)", type=str, default="INFO")
     args = parser.parse_args()
     return args
