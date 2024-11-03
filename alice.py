@@ -154,27 +154,12 @@ def DH_protocol(conn, msg):
 
     conn.close()
 
-def run(addr, port, option):
-    conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    conn.connect((addr, port))
-    logging.info("Alice is connected to {}:{}".format(addr, port))
-
-    if option == 1:
-        RSAKey_protocol(conn)
-    elif option == 2:
-        msg = input("Enter message to send: ")
-        RSA_protocol(conn, msg)
-    elif option == 3:
-        msg = input("Enter message to send: ")
-        DH_protocol(conn, msg)
-
-    conn.close()
-
 def command_line_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-a", "--addr", metavar="<bob's address>", help="Bob's address", type=str, required=True)
     parser.add_argument("-p", "--port", metavar="<bob's port>", help="Bob's port", type=int, required=True)
-    parser.add_argument("-o", "--option", metavar="<option (1/2/3)>", help="Which protocol to run (1/2/3)", type=int, required=True)
+    parser.add_argument("-o", "--option", metavar="<option (1/2/3/4)>", help="Which protocol to run (1/2/3/4)", type=int, required=True)
+    parser.add_argument("-m", "--msg", metavar="<message>", help="Message to send", type=str, default="world")
     parser.add_argument("-l", "--log", metavar="<log level (DEBUG/INFO/WARNING/ERROR/CRITICAL)>", help="Log level (DEBUG/INFO/WARNING/ERROR/CRITICAL)", type=str, default="INFO")
     args = parser.parse_args()
     return args
@@ -184,11 +169,22 @@ def main():
     log_level = args.log
     logging.basicConfig(level=log_level)
 
-    if args.option < 1 or args.option > 3:
+    if args.option < 1 or args.option > 4:
         logging.error("Invalid option")
         return
 
-    run(args.addr, args.port, args.option)
+    conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    conn.connect((args.addr, args.port))
+    logging.info("Alice is connected to {}:{}".format(args.addr, args.port))
+
+    if args.option == 1:
+        RSAKey_protocol(conn)
+    elif args.option == 2:
+        RSA_protocol(conn, args.msg)
+    elif args.option == 3:
+        DH_protocol(conn, args.msg)
+
+    conn.close()
     
 if __name__ == "__main__":
     main()

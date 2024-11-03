@@ -8,29 +8,11 @@ from utilities.DH_funcs import *
 from utilities.AES_funcs import *
 from utilities.utility import *
 
-def handler(sock):
-    sock.close()
-
-def general_protocol(conn, msg):
-    logging.info("[*] Bob General protocol starts")
-
-    a_msg = recv_packet(conn)
-    logging.debug("a_msg: {}".format(a_msg))
-
-    logging.info("[*] Received: {}".format(a_msg))
-
-    if a_msg["type"] == "RSAKey":
-        RSAKey_protocol(conn)
-    elif a_msg["type"] == "RSA":
-        RSA_protocol(conn, msg)
-    elif a_msg["type"] == "DH":
-        DH_protocol(conn, msg)
-    else:
-        logging.error(" - Unknown protocol")
-        return
-
 def RSAKey_protocol(conn):
     logging.info("[*] Bob RSAKey protocol starts")
+
+    a_msg = recv_packet(conn)
+    logging.info("[*] Received: {}".format(a_msg))
 
     _, p, q, e, d = rsa_keygen()
 
@@ -52,6 +34,11 @@ def RSAKey_protocol(conn):
 
 def RSA_protocol(conn, msg):
     logging.info("[*] Bob RSA protocol starts")
+
+    a_msg1 = recv_packet(conn)
+    logging.debug("a_msg1: {}".format(a_msg1))
+
+    logging.info("[*] Received: {}".format(a_msg1))
 
     n, _, _, e, d = rsa_keygen()
 
@@ -98,6 +85,11 @@ def RSA_protocol(conn, msg):
 def DH_protocol(conn, msg):
     logging.info("[*] Bob DH protocol starts")
 
+    a_msg1 = recv_packet(conn)
+    logging.debug("a_msg1: {}".format(a_msg1))
+
+    logging.info("[*] Received: {}".format(a_msg1))
+
     p, g, private_bob, public_bob = dh_keygen()
 
     b_msg1 = {}
@@ -141,26 +133,12 @@ def DH_protocol(conn, msg):
 
     conn.close()
 
-def run(addr, port, msg):
-    bob = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    bob.bind((addr, port))
-
-    bob.listen(10)
-    logging.info("[*] Bob is listening on {}:{}".format(addr, port))
-
-    while True:
-        conn, info = bob.accept()
-
-        logging.info("[*] Bob accepts the connection from {}:{}".format(info[0], info[1]))
-
-        conn_handle = threading.Thread(target=general_protocol, args=(conn,msg,))
-        conn_handle.start()
-
-
 def command_line_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-a", "--addr", metavar="<bob's IP address>", help="Bob's IP address", type=str, default="0.0.0.0")
     parser.add_argument("-p", "--port", metavar="<bob's open port>", help="Bob's port", type=int, required=True)
+    parser.add_argument("-o", "--option", metavar="<option (1/2/3/4)>", help="Which protocol to run (1/2/3/4)", type=int, required=True)
+    parser.add_argument("-m", "--msg", metavar="<message>", help="Message to send", type=str, default="world")
     parser.add_argument("-l", "--log", metavar="<log level (DEBUG/INFO/WARNING/ERROR/CRITICAL)>", help="Log level (DEBUG/INFO/WARNING/ERROR/CRITICAL)", type=str, default="INFO")
     args = parser.parse_args()
     return args
@@ -170,9 +148,29 @@ def main():
     log_level = args.log
     logging.basicConfig(level=log_level)
 
-    msg = input("Enter message to send: ")
+    if args.option < 1 or args.option > 4:
+        logging.error("Invalid option")
+        return
 
-    run(args.addr, args.port, msg)
+    bob = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    bob.bind((args.addr, args.port))
+
+    bob.listen(10)
+    logging.info("[*] Bob is listening on {}:{}".format(args.addr, args.port))
+
+    conn, info = bob.accept()
+    bob.close()
+
+    logging.info("[*] Bob accepts the connection from {}:{}".format(info[0], info[1]))
+
+    if args.option == 1:
+        RSAKey_protocol(conn)
+    elif args.option == 2:
+        RSA_protocol(conn, args.msg)
+    elif args.option == 3:
+        DH_protocol(conn, args.msg)
+
+    conn.close()
 
 if __name__ == "__main__":
     main()
