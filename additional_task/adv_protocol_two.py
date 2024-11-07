@@ -17,7 +17,7 @@ def aes_decrypt(key, encrypted):
 
 
 def find_private_key(g, public_key, p):
-    for private_key in range(0, p - 1):
+    for private_key in range(0, p):
         if pow(g, private_key, p) == public_key:
             return private_key
     return None
