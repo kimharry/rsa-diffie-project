@@ -14,7 +14,7 @@ def dh_shared_key(p, public, private):
     return (public ** private) % p
 
 def is_correct_generator(p, g):
-    if g < 2 or g >= p - 1:
+    if g <= 1 or g >= p:
         return False
 
     prime_factors = factorint(p-1)
