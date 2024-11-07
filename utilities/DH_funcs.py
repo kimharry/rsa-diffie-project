@@ -1,4 +1,5 @@
 import random
+from sympy import factorint
 from utilities.utility import *
 
 def dh_keygen(p=0, g=0):
@@ -13,10 +14,17 @@ def dh_shared_key(p, public, private):
     return (public ** private) % p
 
 def is_correct_generator(p, g):
-    if g > 1 and g < p:
-        if (g ** (p - 1)) % p == 1:
-            return True
-    return False
+    if g < 2 or g >= p - 1:
+        return False
+
+    prime_factors = factorint(p-1)
+
+    for q in prime_factors.keys():
+        if pow(g, (p-1) // q, p) == 1:
+            return False
+
+    return True
+
 
 if __name__ == '__main__':
     p, g, y, x = dh_keygen()

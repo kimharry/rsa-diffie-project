@@ -103,7 +103,7 @@ def DH_protocol(conn, msg, is_protocol_4=0):
         b_msg1["parameter"]["g"] = g
     elif is_protocol_4 == 2:
         b_msg1["parameter"]["p"] = p
-        b_msg1["parameter"]["g"] = 1
+        b_msg1["parameter"]["g"] = g+1
 
     send_packet(conn, b_msg1)
     logging.info("[*] Sent: {}".format(b_msg1))
