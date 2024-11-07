@@ -77,7 +77,7 @@ def attack(file_name):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Attack on DH protocol messages")
-    parser.add_argument("log_file", help="Log file path")
+    parser.add_argument("-l", "--log", help="Log file path")
     args = parser.parse_args()
 
-    attack(args.log_file)
+    attack(args.log)
