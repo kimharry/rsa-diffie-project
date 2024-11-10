@@ -30,4 +30,5 @@ if __name__ == '__main__':
     p, g, y, x = dh_keygen()
     print(p, g, y, x)
     k = dh_shared_key(p, g, y, x)
+    print(k)
     
