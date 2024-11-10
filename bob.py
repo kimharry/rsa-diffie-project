@@ -1,4 +1,3 @@
-import socket
 import argparse
 import logging
 from utilities.RSA_funcs import *
