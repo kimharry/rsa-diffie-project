@@ -16,7 +16,7 @@ def modular(base, exponent, mod):
     return result
 
 #fermat
-def is_prime(n, k=5):
+def is_prime(n, k=10):
     if n == 1:
         return False
     
