@@ -150,7 +150,7 @@ def command_line_args():
     parser.add_argument("-a", "--addr", metavar="<bob's IP address>", help="Bob's IP address", type=str, default="0.0.0.0")
     parser.add_argument("-p", "--port", metavar="<bob's open port>", help="Bob's port", type=int, required=True)
     parser.add_argument("-o", "--option", metavar="<option (1/2/3/4)>", help="Which protocol to run (1/2/3/4)", type=int, required=True)
-    parser.add_argument("-m", "--msg", metavar="<message>", help="Message to send", type=str, default="world")
+    parser.add_argument("-m", "--msg", metavar="<message>", help="Message to send", type=str, default="hello")
     parser.add_argument("-l", "--log", metavar="<log level (DEBUG/INFO/WARNING/ERROR/CRITICAL)>", help="Log level (DEBUG/INFO/WARNING/ERROR/CRITICAL)", type=str, default="INFO")
     args = parser.parse_args()
     return args
